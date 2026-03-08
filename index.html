@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Outreach Tracker</title>
 
 <style>
@@ -11,16 +14,20 @@ font-family: Arial, sans-serif;
 background:#020617;
 color:#e5e7eb;
 padding:30px;
-}
-
-h1{
-margin-bottom:20px;
+margin:0;
 }
 
 .container{
 max-width:900px;
 margin:auto;
 }
+
+h1{
+margin-bottom:20px;
+font-size:28px;
+}
+
+/* FORM */
 
 .form{
 display:grid;
@@ -35,6 +42,7 @@ border-radius:6px;
 border:1px solid #334155;
 background:#0f172a;
 color:white;
+font-size:14px;
 }
 
 button{
@@ -55,10 +63,18 @@ background:#0096c7;
 grid-column:1/3;
 }
 
+/* TABLE */
+
+.table-wrap{
+width:100%;
+overflow-x:auto;
+}
+
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:20px;
+margin-top:10px;
+min-width:700px;
 }
 
 th,td{
@@ -83,87 +99,33 @@ cursor:pointer;
 background:#dc2626;
 }
 
-/* ===============================
-   MOBILE RESPONSIVE
-================================ */
+/* MOBILE */
 
-@media (max-width: 768px) {
-  body {
-    padding: 16px;
-  }
+@media (max-width:768px){
 
-  .container {
-    max-width: 100%;
-  }
-
-  h1 {
-    font-size: 1.4rem;
-    line-height: 1.25;
-    margin-bottom: 16px;
-  }
-
-  .form {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .full {
-    grid-column: auto;
-  }
-
-  input,
-  select,
-  button {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-    border-collapse: collapse;
-  }
-
-  th,
-  td {
-    min-width: 120px;
-    font-size: 0.92rem;
-  }
-
-  .delete {
-    width: 100%;
-    padding: 8px 10px;
-  }
+body{
+padding:16px;
 }
 
-/* ===============================
-   SMALLER PHONES
-================================ */
-
-@media (max-width: 480px) {
-  body {
-    padding: 12px;
-  }
-
-  h1 {
-    font-size: 1.2rem;
-  }
-
-  input,
-  select,
-  button {
-    padding: 12px;
-    font-size: 15px;
-  }
-
-  th,
-  td {
-    min-width: 110px;
-    padding: 8px;
-    font-size: 0.85rem;
-  }
+h1{
+font-size:22px;
 }
+
+.form{
+grid-template-columns:1fr;
+}
+
+.full{
+grid-column:auto;
+}
+
+input,select,button{
+width:100%;
+font-size:16px;
+}
+
+}
+
 </style>
 </head>
 
@@ -200,10 +162,11 @@ background:#dc2626;
 
 </div>
 
+<div class="table-wrap">
+
 <table id="table">
 
 <thead>
-
 <tr>
 <th>Business</th>
 <th>Location</th>
@@ -213,12 +176,13 @@ background:#dc2626;
 <th>Status</th>
 <th></th>
 </tr>
-
 </thead>
 
 <tbody></tbody>
 
 </table>
+
+</div>
 
 </div>
 
@@ -279,14 +243,12 @@ return;
 }
 
 let entry = {
-
 business,
 location,
 contact,
 platform,
 status,
 date:new Date().toLocaleDateString()
-
 };
 
 entries.push(entry);
