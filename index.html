@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Outreach Tracker</title>
+<title>Business Outreach Tracker</title>
 
 <style>
 
 body{
-font-family: Arial, sans-serif;
+font-family:Arial;
 background:#020617;
 color:#e5e7eb;
 padding:30px;
@@ -18,13 +17,12 @@ margin:0;
 }
 
 .container{
-max-width:900px;
+max-width:1000px;
 margin:auto;
 }
 
 h1{
 margin-bottom:20px;
-font-size:28px;
 }
 
 /* FORM */
@@ -35,6 +33,361 @@ grid-template-columns:1fr 1fr;
 gap:10px;
 margin-bottom:20px;
 }
+
+input,select{
+padding:10px;
+border-radius:6px;
+border:1px solid #334155;
+background:#0f172a;
+color:white;
+}
+
+button{
+padding:10px;
+border:none;
+background:#00b4d8;
+color:white;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+background:#0096c7;
+}
+
+.full{
+grid-column:1/3;
+}
+
+/* TABLE */
+
+.table-wrap{
+overflow-x:auto;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+min-width:900px;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #334155;
+}
+
+th{
+background:#0f172a;
+}
+
+.delete{
+background:#ef4444;
+padding:6px 10px;
+border:none;
+border-radius:5px;
+}
+
+.edit{
+background:#22c55e;
+padding:6px 10px;
+border:none;
+border-radius:5px;
+margin-right:6px;
+}
+
+/* STATUS COLORS */
+
+.status-sent{color:#38bdf8;}
+.status-wait{color:#facc15;}
+.status-replied{color:#4ade80;}
+.status-follow{color:#fb923c;}
+.status-closed{color:#ef4444;}
+
+.follow-alert{
+background:#1e293b;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.form{
+grid-template-columns:1fr;
+}
+
+.full{
+grid-column:auto;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Business Outreach Tracker</h1>
+
+<div class="form">
+
+<input id="business" placeholder="Business Name">
+
+<input id="industry" placeholder="Industry (Restaurant, Gym...)">
+
+<input id="location" placeholder="Location">
+
+<input id="contact" placeholder="Contact (email / TikTok / name)">
+
+<input id="website" placeholder="Website / Link">
+
+<select id="platform">
+<option>Email</option>
+<option>TikTok</option>
+<option>LinkedIn</option>
+<option>Website Form</option>
+<option>WhatsApp</option>
+</select>
+
+<select id="status">
+<option>Message Sent</option>
+<option>Waiting Reply</option>
+<option>Replied</option>
+<option>Follow-up Needed</option>
+<option>Closed</option>
+</select>
+
+<input type="date" id="followup">
+
+<button class="full" onclick="saveEntry()">Save Entry</button>
+
+</div>
+
+<div class="table-wrap">
+
+<table id="table">
+
+<thead>
+
+<tr>
+<th>Business</th>
+<th>Industry</th>
+<th>Location</th>
+<th>Contact</th>
+<th>Website</th>
+<th>Platform</th>
+<th>Date</th>
+<th>Status</th>
+<th>Follow-up</th>
+<th></th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script>
+
+let entries = JSON.parse(localStorage.getItem("outreachEntries")) || [];
+
+let editIndex = null;
+
+function saveStorage(){
+
+localStorage.setItem("outreachEntries",JSON.stringify(entries));
+
+}
+
+function statusClass(status){
+
+if(status==="Message Sent") return "status-sent";
+if(status==="Waiting Reply") return "status-wait";
+if(status==="Replied") return "status-replied";
+if(status==="Follow-up Needed") return "status-follow";
+if(status==="Closed") return "status-closed";
+
+return "";
+
+}
+
+function render(){
+
+let tbody=document.querySelector("#table tbody");
+tbody.innerHTML="";
+
+entries.forEach((entry,index)=>{
+
+let row=document.createElement("tr");
+
+let followAlert=false;
+
+if(entry.date){
+
+let d=new Date(entry.date);
+
+let now=new Date();
+
+let diff=(now-d)/(1000*60*60*24);
+
+if(diff>=3 && entry.status==="Message Sent"){
+
+followAlert=true;
+
+}
+
+}
+
+if(followAlert){
+
+row.classList.add("follow-alert");
+
+}
+
+row.innerHTML=`
+
+<td>${entry.business}</td>
+
+<td>${entry.industry}</td>
+
+<td>${entry.location}</td>
+
+<td>${entry.contact}</td>
+
+<td><a href="${entry.website}" target="_blank">${entry.website || "-"}</a></td>
+
+<td>${entry.platform}</td>
+
+<td>${entry.date}</td>
+
+<td class="${statusClass(entry.status)}">${entry.status}</td>
+
+<td>${entry.followup || "-"}</td>
+
+<td>
+
+<button class="edit" onclick="editEntry(${index})">Edit</button>
+
+<button class="delete" onclick="deleteEntry(${index})">Delete</button>
+
+</td>
+
+`;
+
+tbody.appendChild(row);
+
+});
+
+}
+
+function saveEntry(){
+
+let business=document.getElementById("business").value.trim();
+let industry=document.getElementById("industry").value.trim();
+let location=document.getElementById("location").value.trim();
+let contact=document.getElementById("contact").value.trim();
+let website=document.getElementById("website").value.trim();
+let platform=document.getElementById("platform").value;
+let status=document.getElementById("status").value;
+let followup=document.getElementById("followup").value;
+
+if(!business || !contact){
+
+alert("Business and Contact required");
+
+return;
+
+}
+
+let entry={
+
+business,
+industry,
+location,
+contact,
+website,
+platform,
+status,
+followup,
+date:new Date().toLocaleDateString()
+
+};
+
+if(editIndex!==null){
+
+entries[editIndex]=entry;
+editIndex=null;
+
+}else{
+
+entries.unshift(entry);
+
+}
+
+saveStorage();
+
+clearForm();
+
+render();
+
+}
+
+function editEntry(index){
+
+let e=entries[index];
+
+document.getElementById("business").value=e.business;
+document.getElementById("industry").value=e.industry;
+document.getElementById("location").value=e.location;
+document.getElementById("contact").value=e.contact;
+document.getElementById("website").value=e.website;
+document.getElementById("platform").value=e.platform;
+document.getElementById("status").value=e.status;
+document.getElementById("followup").value=e.followup;
+
+editIndex=index;
+
+window.scrollTo({top:0,behavior:"smooth"});
+
+}
+
+function deleteEntry(index){
+
+if(!confirm("Delete entry?")) return;
+
+entries.splice(index,1);
+
+saveStorage();
+
+render();
+
+}
+
+function clearForm(){
+
+document.getElementById("business").value="";
+document.getElementById("industry").value="";
+document.getElementById("location").value="";
+document.getElementById("contact").value="";
+document.getElementById("website").value="";
+document.getElementById("followup").value="";
+
+}
+
+render();
+
+</script>
+
+</body>
+  </html>}
 
 input, select{
 padding:10px;
