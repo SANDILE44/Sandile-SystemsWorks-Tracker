@@ -11,7 +11,7 @@ let industries = JSON.parse(localStorage.getItem("industries")) || [
 
 let tracker = JSON.parse(localStorage.getItem("tracker")) || [];
 
-let reminders = [];
+let template = JSON.parse(localStorage.getItem("template")) || {};
 
 
 // ELEMENTS
@@ -33,7 +33,7 @@ const notificationList = document.getElementById("notifications");
 const popup = document.getElementById("popupReminder");
 
 
-// SAVE
+// SAVE FUNCTIONS
 
 function saveIndustries(){
 localStorage.setItem("industries",JSON.stringify(industries));
@@ -41,6 +41,10 @@ localStorage.setItem("industries",JSON.stringify(industries));
 
 function saveTracker(){
 localStorage.setItem("tracker",JSON.stringify(tracker));
+}
+
+function saveTemplate(){
+localStorage.setItem("template",JSON.stringify(template));
 }
 
 
@@ -52,7 +56,7 @@ function renderIndustries(){
 industrySelect.innerHTML="";
 searchIndustry.innerHTML="";
 
-industries.forEach(ind =>{
+industries.forEach(ind=>{
 
 let opt1=document.createElement("option");
 opt1.value=ind;
@@ -66,6 +70,7 @@ searchIndustry.appendChild(opt2);
 });
 
 }
+
 
 
 // ADD INDUSTRY
@@ -90,28 +95,27 @@ newIndustry.value="";
 
 // DEFAULT LOCATION
 
-function setDefaults(){
+defaultLocationInput.value = localStorage.getItem("defaultLocation") || "";
 
-let loc=defaultLocationInput.value;
+defaultLocationInput.addEventListener("change",()=>{
 
-localStorage.setItem("defaultLocation",loc);
+localStorage.setItem("defaultLocation",defaultLocationInput.value);
 
-alert("Defaults saved");
-
-}
+});
 
 
 
 // MESSAGE TEMPLATE
 
+subjectInput.value = template.subject || "";
+messageInput.value = template.message || "";
+
 document.getElementById("saveTemplate").onclick=function(){
 
-let template={
-subject:subjectInput.value,
-message:messageInput.value
-};
+template.subject=subjectInput.value;
+template.message=messageInput.value;
 
-localStorage.setItem("template",JSON.stringify(template));
+saveTemplate();
 
 alert("Template saved");
 
@@ -119,38 +123,77 @@ alert("Template saved");
 
 
 
-// FIND BUSINESSES (SIMULATED)
+// BUSINESS DISCOVERY (SIMULATION)
 
 document.getElementById("findBusinesses").onclick=function(){
-
-resultsTable.innerHTML="";
 
 let industry=searchIndustry.value;
 let city=document.getElementById("searchLocation").value;
 
-for(let i=1;i<=5;i++){
+autoDiscoverBusinesses(industry,city);
+
+};
+
+
+function autoDiscoverBusinesses(industry,city){
+
+resultsTable.innerHTML="";
+
+let businesses=[];
+
+for(let i=1;i<=20;i++){
+
+businesses.push({
+
+name:`${industry} Company ${i}`,
+website:`https://example${i}.com`,
+email:`contact${i}@example.com`,
+phone:`+2760000${i}`
+
+});
+
+}
+
+renderDiscoveredBusinesses(businesses,industry,city);
+
+}
+
+
+
+function renderDiscoveredBusinesses(list,industry,city){
+
+resultsTable.innerHTML="";
+
+list.forEach(b=>{
 
 let row=document.createElement("tr");
 
 row.innerHTML=`
 
-<td>${industry} Business ${i}</td>
-<td>contact${i}@example.com</td>
-<td>+27 000000${i}</td>
-<td>example${i}.com</td>
+<td>${b.name}</td>
+<td>${b.email}</td>
+<td>${b.phone}</td>
+<td><a href="${b.website}" target="_blank">${b.website}</a></td>
+
 <td>
-<button onclick="sendToTracker('${industry} Business ${i}','${industry}','${city}','contact${i}@example.com')">
+
+<button onclick="sendToTracker('${b.name}','${industry}','${city}','${b.email}')">
 Add
 </button>
+
+<button onclick="quickOutreach('${b.name}','${b.email}','${b.phone}')">
+Send
+</button>
+
 </td>
 
 `;
 
 resultsTable.appendChild(row);
 
-}
+});
 
-};
+}
 
 
 
@@ -180,7 +223,7 @@ renderTracker();
 
 
 
-// STATUS CLASS
+// STATUS COLOR
 
 function statusClass(status){
 
@@ -196,7 +239,7 @@ return "";
 
 
 
-// RENDER TRACKER
+// TRACKER TABLE
 
 function renderTracker(){
 
@@ -208,12 +251,7 @@ let remaining=lead.followup-Date.now();
 
 let minutes=Math.floor(remaining/60000);
 
-let timerText=minutes+"m";
-
-let timerClass="";
-
-if(minutes<=30) timerClass="timer-warning";
-if(minutes<=15) timerClass="timer-danger";
+let timerText = minutes>0 ? minutes+"m" : "Due";
 
 let row=document.createElement("tr");
 
@@ -226,7 +264,7 @@ row.innerHTML=`
 <td>${lead.platform}</td>
 <td class="${statusClass(lead.status)}">${lead.status}</td>
 <td>${new Date(lead.followup).toLocaleString()}</td>
-<td class="${timerClass}">${timerText}</td>
+<td>${timerText}</td>
 
 <td>
 
@@ -245,7 +283,7 @@ trackerTable.appendChild(row);
 
 
 
-// DELETE
+// DELETE LEAD
 
 function deleteLead(i){
 
@@ -263,7 +301,7 @@ renderTracker();
 
 function editStatus(i){
 
-let newStatus=prompt("Update status");
+let newStatus=prompt("Update status",tracker[i].status);
 
 if(!newStatus) return;
 
@@ -272,6 +310,58 @@ tracker[i].status=newStatus;
 saveTracker();
 
 renderTracker();
+
+}
+
+
+
+// EMAIL EXTRACTOR
+
+async function extractEmails(url){
+
+try{
+
+let res=await fetch(url);
+let html=await res.text();
+
+let emails=html.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig);
+
+return emails ? [...new Set(emails)] : [];
+
+}catch(err){
+
+return [];
+
+}
+
+}
+
+
+
+// QUICK OUTREACH
+
+function quickOutreach(name,email,phone){
+
+let subject=encodeURIComponent(template.subject || "Quick question");
+let message=encodeURIComponent(template.message || "Hello, I wanted to reach out.");
+
+if(email){
+
+let emailLink=`mailto:${email}?subject=${subject}&body=${message}`;
+
+window.open(emailLink);
+
+}
+
+if(phone){
+
+let number=phone.replace(/\D/g,'');
+
+let whatsapp=`https://wa.me/${number}?text=${message}`;
+
+window.open(whatsapp);
+
+}
 
 }
 
@@ -311,7 +401,7 @@ popup.style.display="block";
 
 
 
-// CLOSE POPUP
+// POPUP CLOSE
 
 document.getElementById("dismissPopup").onclick=function(){
 
@@ -321,32 +411,11 @@ popup.style.display="none";
 
 
 
-// TOGGLE NOTIFICATIONS
-
-function toggleNotifications(){
-
-let panel=document.getElementById("notificationPanel");
-
-if(panel.style.display==="block"){
-
-panel.style.display="none";
-
-}else{
-
-panel.style.display="block";
-
-}
-
-}
-
-
-
 // TIMER LOOP
 
 setInterval(()=>{
 
 checkReminders();
-
 renderTracker();
 
 },60000);
@@ -356,5 +425,4 @@ renderTracker();
 // INIT
 
 renderIndustries();
-
 renderTracker();
